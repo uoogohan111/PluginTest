@@ -38,7 +38,7 @@ jobs:
           
           # 3. Start the tunnel using the environment variable, which the playit agent SHOULD recognize.
           # Note: We omit the '-s' flag and let the agent read the key from the environment.
-          nohup ./playit --start-all > playit.log 2>&1 &
+          nohup ./playit connect > playit.log 2>&1 &
           
           # Give it a moment to stabilize
           echo "Playit client started in background."
