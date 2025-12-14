@@ -24,7 +24,6 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-          cache: 'maven' # Caching is not strictly needed for the server JAR, but good practice
 
       - name: 🌐 Start Playit.gg Tunnel in Background
         # We need a dedicated background process to handle the tunnel
