@@ -1,0 +1,59 @@
+name: ⛏️ Minecraft Server Runner
+
+# This workflow will be manually triggered from the Actions tab
+on:
+  workflow_dispatch:
+    inputs:
+      playit_secret:
+        description: 'Your Playit.gg secret key to create the tunnel.'
+        required: true
+        type: string
+
+jobs:
+  run-minecraft:
+    # Use a high-end runner (ubuntu-latest is fine for basic tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 360 # Max runtime is 6 hours (360 minutes)
+
+    steps:
+      - name: ⬇️ Checkout code
+        uses: actions/checkout@v4
+
+      - name: ☕ Install Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven' # Caching is not strictly needed for the server JAR, but good practice
+
+      - name: 🌐 Start Playit.gg Tunnel in Background
+        # We need a dedicated background process to handle the tunnel
+        run: |
+          # Install Playit.gg client
+          curl -sL https://github.com/playit-cloud/playit-cli/releases/download/v1.0.12/playit-v1.0.12-linux-x86_64.tar.gz | tar -xz playit
+          chmod +x playit
+          
+          # Start the tunnel in the background using the secret input
+          # Note: Replace '25565' if your server runs on a different port.
+          ./playit -s ${{ github.event.inputs.playit_secret }} --start-all > playit.log 2>&1 &
+          
+          # Wait a moment for the tunnel to initialize
+          echo "Playit client started in background."
+          sleep 10
+          
+          # Output the tunnel details (you'll find the public address in your Playit.gg dashboard)
+          cat playit.log
+
+      - name: 🚀 Start Minecraft Server
+        # The 'timeout' command limits how long the server runs to ensure 
+        # the server shuts down before the 6-hour GitHub Actions limit.
+        # Here it's set to 5 hours (300 minutes), giving 1 hour buffer.
+        run: |
+          echo "Starting Minecraft Server..."
+          timeout 300m java -Xmx4G -Xms4G -jar server.jar nogui
+          echo "Minecraft Server process ended."
+          
+      - name: 🧹 Cleanup (Optional)
+        # Here is where you would commit/push your world files back to the repo,
+        # or upload them to an external cloud storage (like S3) if needed.
+        run: echo "Server stopped. World data is volatile unless explicitly saved/uploaded."
